@@ -2,7 +2,7 @@
 Repositorio para el código y archivos del proyecto
 
 ## Comando necesarios para funcionamiento del proyecto en local.
-### ** Se debe importar el entorno con las librerias instaladas con el siguiente comando. **
+### **Se debe importar el entorno con las librerias instaladas con el siguiente comando.**
 conda env create -f entorno.yml
 (Donde se instalara un nuevo entorno con todo lo necesario)
 ## En caso de que no funcione.
