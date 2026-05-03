@@ -22,7 +22,7 @@ dependencies:
   - c-ares=1.34.6=hd44998d_0
   - ca-certificates=2026.3.19=h06a4308_0
   - cairo=1.18.4=h44eff21_0
-  - certifi=2026.01.04=py311h06a4308_0
+  - certifi=2026.4.22=py311h06a4308_0
   - cffi=2.0.0=py311h4eded50_1
   - charset-normalizer=3.4.4=py311h06a4308_0
   - comm=0.2.3=py311h06a4308_0
@@ -178,6 +178,7 @@ dependencies:
   - optree=0.18.0=py311h24d9097_0
   - overrides=7.7.0=py311h06a4308_0
   - packaging=26.0=py311h06a4308_0
+  - pandas=3.0.2=py311h86c3e14_0
   - pandoc=3.8=h06a4308_0
   - pandocfilters=1.5.1=py311h06a4308_0
   - parso=0.8.5=py311h06a4308_0
@@ -225,6 +226,7 @@ dependencies:
   - rfc3986-validator=0.1.1=py311h06a4308_0
   - rich=14.2.0=py311h06a4308_0
   - rpds-py=0.28.0=py311h498d7c9_0
+  - seaborn=0.13.2=py311h06a4308_3
   - send2trash=1.8.3=py311h06a4308_0
   - setuptools=82.0.1=py311h06a4308_0
   - sip=6.15.1=py311he6c97cb_0
