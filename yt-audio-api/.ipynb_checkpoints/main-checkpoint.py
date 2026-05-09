@@ -32,13 +32,14 @@ def handle_audio_request():
     ydl_opts = {
         'format': 'ba/b',
         'noplaylist': True,
+        # Aquí yt-dlp guarda el original (ej. UUID.webm) y FFmpeg lo pasa a UUID.mp3
         'outtmpl': f'{ABS_DOWNLOADS_PATH}/{base_uuid}.%(ext)s',
         
-        # Eliminamos cookiesfrombrowser para evitar bloqueos por sesión
-        # Forzamos el cliente 'tv' que es el más permisivo y no suele pedir JS
-        'extractor_args': {
-            'youtube': ['player_client=tv', 'player_skip_bundle_metadata=True'] 
-        },
+        # VOLVEMOS A FIREFOX (¡Tu idea original era la buena!)
+        'cookiesfrombrowser': ('firefox', ), 
+        
+        # Le decimos que finja ser un móvil Android para saltarse la seguridad web de YouTube
+        'extractor_args': {'youtube': ['player_client=android']},
         
         'postprocessors': [{
             'key': 'FFmpegExtractAudio',
