@@ -176,6 +176,7 @@ if metodo == "Enlace de YouTube":
         if ruta_tmp:
             st.audio(ruta_tmp)
             ruta_a_procesar = ruta_tmp
+    st.warning("⚠️ **Aviso:** Debido a las políticas de seguridad de YouTube, las descargas mediante enlace pueden ser bloqueadas en esta versión web. Si te da error, te recomendamos usar la opción **'Subir archivo'** con tu propio MP3 o WAV.")
 
 elif metodo == "Subir archivo":
     archivo_subido = st.file_uploader("Sube tu canción (MP3, WAV)", type=["wav", "mp3"])
