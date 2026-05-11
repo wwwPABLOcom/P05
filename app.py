@@ -8,67 +8,14 @@ import json
 import os
 import io
 import tempfile
-import requests
 from PIL import Image
 import matplotlib
 matplotlib.use('Agg') # Evita errores de ventanas al dibujar espectrogramas en segundo plano
 import matplotlib.pyplot as plt
 from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
 
-import streamlit as st
-import subprocess
-import time
-import requests
-import atexit
-import os
-import signal
-import sys  # <-- NUEVO IMPORTANTE
-
-# --- NUEVA SECCIÓN: AUTOMATIZACIÓN DE LA API ---
-@st.cache_resource
-def iniciar_api_youtube():
-    """Lanza la API de YouTube en segundo plano de forma segura y solo 1 vez."""
-    url_api = "http://127.0.0.1:5000"
-    
-    # 1. Comprobamos si por casualidad ya está encendida
-    try:
-        requests.get(url_api, timeout=1)
-        return True # Si responde, no hacemos nada más
-    except requests.exceptions.RequestException:
-        pass # Si no responde, la iniciamos
-
-    st.info("🚀 Iniciando motor de descarga (API) en segundo plano...")
-    
-    try:
-        # 2. sys.executable garantiza que usamos el Miniconda correcto
-        # Quitamos DEVNULL para que los errores salgan por tu terminal si los hay
-        proceso = subprocess.Popen(
-            [sys.executable, "main.py"], 
-            cwd="./yt-audio-api", # ⚠️ IMPORTANTE: Asegúrate de que esta carpeta esté al lado de app.py
-        )
-        
-        # 3. Limpieza automática al cerrar Streamlit
-        atexit.register(lambda: os.kill(proceso.pid, signal.SIGTERM))
-        
-        # 4. Bucle inteligente: espera hasta que la API responda (máximo 5 segundos)
-        for _ in range(10):
-            try:
-                requests.get(url_api, timeout=0.5)
-                st.success("✅ Motor de descarga conectado.")
-                return True
-            except requests.exceptions.RequestException:
-                time.sleep(0.5) # Espera medio segundo y vuelve a intentar
-                
-        st.warning("⚠️ La API parece que no arranca. Revisa la terminal donde pusiste 'streamlit run' para ver los errores.")
-        return False
-        
-    except FileNotFoundError:
-        st.error("❌ No se encuentra la carpeta './yt-audio-api' o el archivo 'main.py'.")
-        return False
-
-# Llamamos a la función justo al empezar
-iniciar_api_youtube()
-# --- FIN DE LA SECCIÓN DE AUTOMATIZACIÓN ---
+# --- NUEVO IMPORT PARA YOUTUBE ---
+import yt_dlp 
 
 # ==========================================
 # 1. CONFIGURACIÓN Y RUTAS
@@ -83,9 +30,6 @@ SCALER_PATH = "./clasificador_hibrido/Prueba/scaler_hibrido_definitivo.pkl"
 CLASES_PATH = "./clasificador_hibrido/Prueba/clases_hibrido_definitivo.json"
 N_CLASES = 10
 IMG_SIZE = (128, 128)
-
-# Tu API de YouTube corriendo en local por defecto
-API_YOUTUBE_URL = "http://127.0.0.1:5000"
 
 # ==========================================
 # 2. CARGA DE MODELO (En caché para que no cargue cada vez)
@@ -141,37 +85,44 @@ def audio_a_espectrograma(y: np.ndarray, sr: int) -> np.ndarray:
     return preprocess_input(img_arr)
 
 # ==========================================
-# 4. DESCARGA DESDE YOUTUBE (VÍA API)
+# 4. DESCARGA DESDE YOUTUBE (INTEGRADA)
 # ==========================================
-def descargar_desde_api(url):
-    try:
-        with st.spinner("Conectando con la API de YouTube para obtener token..."):
-            res_token = requests.get(f"{API_YOUTUBE_URL}/", params={"url": url})
-            res_token.raise_for_status()
-            token = res_token.json().get("token")
-            
-        if not token:
-            st.error("No se recibió un token válido.")
+def descargar_audio_youtube(url):
+    # Creamos una ruta segura en la carpeta temporal del sistema
+    tmp_dir = tempfile.gettempdir()
+    ruta_salida = os.path.join(tmp_dir, 'audio_yt_temporal.%(ext)s')
+    ruta_final = os.path.join(tmp_dir, 'audio_yt_temporal.mp3')
+    
+    # Si existe un archivo anterior, lo borramos para evitar conflictos
+    if os.path.exists(ruta_final):
+        try:
+            os.remove(ruta_final)
+        except:
+            pass
+
+    ydl_opts = {
+        'format': 'bestaudio/best',
+        'postprocessors': [{
+            'key': 'FFmpegExtractAudio',
+            'preferredcodec': 'mp3',
+            'preferredquality': '192',
+        }],
+        'outtmpl': ruta_salida, 
+        'quiet': True,
+        'no_warnings': True
+    }
+    
+    with st.spinner("Descargando audio de YouTube..."):
+        try:
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                ydl.download([url])
+            return ruta_final
+        except Exception as e:
+            st.error(f"❌ Error al descargar el video: {e}")
             return None
-            
-        with st.spinner("Descargando audio convertido desde la API..."):
-            res_audio = requests.get(f"{API_YOUTUBE_URL}/download", params={"token": token})
-            res_audio.raise_for_status()
-            
-            tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".mp3")
-            tmp_file.write(res_audio.content)
-            tmp_file.close()
-            return tmp_file.name
-            
-    except requests.exceptions.ConnectionError:
-        st.error(f"❌ No se pudo conectar a la API local ({API_YOUTUBE_URL}). ¿Seguro que la estás ejecutando?")
-        return None
-    except Exception as e:
-        st.error(f"❌ Error al procesar el enlace: {e}")
-        return None
 
 # ==========================================
-# 5. LÓGICA DE PREDICCIÓN (Adaptada a Streamlit)
+# 5. LÓGICA DE PREDICCIÓN
 # ==========================================
 def analizar_audio(ruta_audio):
     modelo, scalers, idx_to_class = load_models()
@@ -218,11 +169,10 @@ metodo = st.radio("¿Qué método quieres usar?", ["Enlace de YouTube", "Subir a
 ruta_a_procesar = None
 
 if metodo == "Enlace de YouTube":
-    st.info("⚠️ Recuerda ejecutar la API de YouTube (`python main.py` de yt-audio-api) en otra pestaña de tu terminal.")
     youtube_url = st.text_input("Pega el enlace de YouTube:")
     
     if st.button("Analizar Enlace") and youtube_url:
-        ruta_tmp = descargar_desde_api(youtube_url)
+        ruta_tmp = descargar_audio_youtube(youtube_url)
         if ruta_tmp:
             st.audio(ruta_tmp)
             ruta_a_procesar = ruta_tmp
@@ -232,7 +182,6 @@ elif metodo == "Subir archivo":
     if archivo_subido:
         st.audio(archivo_subido)
         if st.button("Analizar Archivo"):
-            # Guardar el archivo en una ruta temporal para que Librosa pueda leerlo
             tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
             tmp_file.write(archivo_subido.getbuffer())
             tmp_file.close()
@@ -254,11 +203,10 @@ if ruta_a_procesar:
             genero_2 = idx_to_class[ranking[1][0]].upper()
             prob_2 = ranking[1][1] * 100
             
-            st.success(f"¡Análisis finalizado con éxito!")
+            st.success("¡Análisis finalizado con éxito!")
             st.markdown(f"### 🏆 GÉNERO PRINCIPAL: **{genero_1}** ({prob_1:.1f}%)")
             st.markdown(f"#### 🥈 Sub-género: {genero_2} ({prob_2:.1f}%)")
             
-            # Gráfico de barras para ver todas las probabilidades
             st.write("**Distribución de probabilidades por género:**")
             diccionario_grafico = {idx_to_class[i]: p for i, p in enumerate(probas_finales)}
             st.bar_chart(diccionario_grafico)
@@ -267,6 +215,9 @@ if ruta_a_procesar:
         st.error(f"Error durante el análisis del audio: {str(e)}")
         
     finally:
-        # Limpieza: Borrar el archivo temporal después de analizar
+        # Limpieza: Borrar el archivo temporal después de analizar para no ocupar espacio
         if os.path.exists(ruta_a_procesar):
-            os.remove(ruta_a_procesar)
+            try:
+                os.remove(ruta_a_procesar)
+            except:
+                pass
