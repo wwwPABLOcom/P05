@@ -716,6 +716,48 @@ if ruta_a_procesar:
             except: pass
 
 # ==========================================
+# SECCIÓN: 10 GÉNEROS
+# ==========================================
+st.markdown('<div class="music-divider" style="margin-top:3rem;">♪ géneros disponibles ♪</div>', unsafe_allow_html=True)
+
+GENRE_INFO = [
+    {"key": "blues",     "emoji": "🎸", "nombre": "Blues",     "desc": "Raíces afroamericanas del sur de EE.UU. Progresiones de acordes en 12 compases, expresión emocional intensa y técnica de guitarra slide."},
+    {"key": "classical", "emoji": "🎻", "nombre": "Classical",  "desc": "Música académica occidental (Bach, Mozart, Beethoven). Estructuras formales como sinfonías, sonatas y cuartetos de cuerda."},
+    {"key": "country",   "emoji": "🤠", "nombre": "Country",    "desc": "Originaria del sur rural de EE.UU. Fusiona folk, gospel y blues con guitarra acústica, banjo y letras sobre la vida cotidiana."},
+    {"key": "disco",     "emoji": "🪩", "nombre": "Disco",      "desc": "Nacida en los 70. Ritmo de 4/4 marcado, líneas de bajo funky, orquestaciones y letras festivas pensadas para la pista de baile."},
+    {"key": "hiphop",    "emoji": "🎤", "nombre": "Hip-Hop",    "desc": "Surgida en el Bronx en los 70. Combina beatmaking, samples, rapping y DJing en una cultura que integra música, danza y arte urbano."},
+    {"key": "jazz",      "emoji": "🎷", "nombre": "Jazz",       "desc": "Improvisación, síncopa y armonías complejas. Desde el swing y el bebop hasta el jazz modal y el fusion, es el lenguaje de la libertad musical."},
+    {"key": "metal",     "emoji": "🤘", "nombre": "Metal",      "desc": "Guitarras distorsionadas y potentes, tempos elevados y técnica virtuosa. Engloba desde el heavy metal clásico hasta el death y el black metal."},
+    {"key": "pop",       "emoji": "🎶", "nombre": "Pop",        "desc": "Música popular de consumo masivo. Estribillos pegadizos, estructuras sencillas y producción pulida orientada al mercado mainstream."},
+    {"key": "reggae",    "emoji": "🌿", "nombre": "Reggae",     "desc": "Originario de Jamaica en los 60. Ritmo offbeat característico, líneas de bajo prominentes y letras con mensajes sociales y espirituales rastafari."},
+    {"key": "rock",      "emoji": "🎵", "nombre": "Rock",       "desc": "Guitarra eléctrica, bajo y batería como núcleo. Desde el rock and roll de los 50 hasta el grunge y el indie, es la columna vertebral del pop moderno."},
+]
+
+genres_html = '<div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap:1rem; margin-bottom:2.5rem;">'
+for g in GENRE_INFO:
+    c = GENRE_COLORS.get(g["key"], DEFAULT_COLOR)
+    genres_html += f'''
+    <div style="
+        background: {c['bg']};
+        border: 1px solid {c['border']};
+        border-radius: 16px;
+        padding: 1.2rem 1.4rem;
+        position: relative;
+        overflow: hidden;
+    ">
+        <div style="position:absolute; top:0; left:0; right:0; height:1px;
+            background: linear-gradient(90deg, transparent, {c['border']}, transparent);"></div>
+        <div style="display:flex; align-items:center; gap:0.7rem; margin-bottom:0.5rem;">
+            <span style="font-size:1.6rem; line-height:1;">{g['emoji']}</span>
+            <span style="font-size:1rem; font-weight:700; color:{c['text']}; letter-spacing:0.5px;">{g['nombre']}</span>
+        </div>
+        <p style="font-size:0.8rem; color:#8b88a8; line-height:1.55; margin:0;">{g['desc']}</p>
+    </div>'''
+genres_html += '</div>'
+
+st.markdown(genres_html, unsafe_allow_html=True)
+
+# ==========================================
 # FOOTER
 # ==========================================
 st.markdown("""
